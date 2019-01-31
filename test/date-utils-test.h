@@ -1,8 +1,12 @@
-
+﻿
 #ifndef DATE_UTILS_TEST_H_
 #define DATE_UTILS_TEST_H_
 
 #include "test.h"
+
+
+#if _MSC_VER > 1700
+
 
 #include <thread>
 #include <chrono>
@@ -55,5 +59,7 @@ TEST(DateUtilsTest, PerformanceTrackerTest) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1600));
     }
 }
+
+#endif
 
 #endif // DATE_UTILS_TEST_H_

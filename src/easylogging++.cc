@@ -174,7 +174,7 @@ Level LevelHelper::convertFromString(const char* levelStr) {
 //       return item.level;
 //     }
   }
-  return Level::Unknown;
+  return Level::EnUnknownLevel;
 }
 
 void LevelHelper::forEachLevel(base::type::EnumType* startIndex, const std::function<bool(void)>& fn) {
@@ -196,7 +196,7 @@ const char* ConfigurationTypeHelper::convertToString(ConfigurationType configura
   if (configurationType == ConfigurationType::Format) return "FORMAT";
   if (configurationType == ConfigurationType::ToFile) return "TO_FILE";
   if (configurationType == ConfigurationType::ToStandardOutput) return "TO_STANDARD_OUTPUT";
-  if (configurationType == ConfigurationType::SubsecondPrecision) return "SUBSECOND_PRECISION";
+  if (configurationType == ConfigurationType::EnSubsecondPrecision) return "SUBSECOND_PRECISION";
   if (configurationType == ConfigurationType::PerformanceTracking) return "PERFORMANCE_TRACKING";
   if (configurationType == ConfigurationType::MaxLogFileSize) return "MAX_LOG_FILE_SIZE";
   if (configurationType == ConfigurationType::LogFlushThreshold) return "LOG_FLUSH_THRESHOLD";
@@ -214,8 +214,8 @@ static struct ConfigurationStringToTypeItem configStringToTypeMap[] = {
   { "to_standard_output", ConfigurationType::ToStandardOutput },
   { "format", ConfigurationType::Format },
   { "filename", ConfigurationType::Filename },
-  { "subsecond_precision", ConfigurationType::SubsecondPrecision },
-  { "milliseconds_width", ConfigurationType::MillisecondsWidth },
+  { "subsecond_precision", ConfigurationType::EnSubsecondPrecision },
+  { "milliseconds_width", ConfigurationType::EnMillisecondsWidth },
   { "performance_tracking", ConfigurationType::PerformanceTracking },
   { "max_log_file_size", ConfigurationType::MaxLogFileSize },
   { "log_flush_threshold", ConfigurationType::LogFlushThreshold },
@@ -232,7 +232,7 @@ ConfigurationType ConfigurationTypeHelper::convertFromString(const char* configS
 // 			return item.configType;
 // 		}
   }
-  return ConfigurationType::Unknown;
+  return ConfigurationType::UnknownConfig;
 }
 
 void ConfigurationTypeHelper::forEachConfigType(base::type::EnumType* startIndex, const std::function<bool(void)>& fn) {
@@ -386,7 +386,7 @@ void Configurations::setToDefault(void) {
   setGlobally(ConfigurationType::ToFile, std::string("true"), true);
 #endif // defined(ELPP_NO_LOG_TO_FILE)
   setGlobally(ConfigurationType::ToStandardOutput, std::string("true"), true);
-  setGlobally(ConfigurationType::SubsecondPrecision, std::string("3"), true);
+  setGlobally(ConfigurationType::EnSubsecondPrecision, std::string("3"), true);
   setGlobally(ConfigurationType::PerformanceTracking, std::string("true"), true);
   setGlobally(ConfigurationType::MaxLogFileSize, std::string("0"), true);
   setGlobally(ConfigurationType::LogFlushThreshold, std::string("0"), true);
@@ -410,7 +410,7 @@ void Configurations::setRemainingToDefault(void) {
 #endif // defined(ELPP_NO_LOG_TO_FILE)
   unsafeSetIfNotExist(Level::Global, ConfigurationType::Filename, std::string(base::consts::kDefaultLogFile));
   unsafeSetIfNotExist(Level::Global, ConfigurationType::ToStandardOutput, std::string("true"));
-  unsafeSetIfNotExist(Level::Global, ConfigurationType::SubsecondPrecision, std::string("3"));
+  unsafeSetIfNotExist(Level::Global, ConfigurationType::EnSubsecondPrecision, std::string("3"));
   unsafeSetIfNotExist(Level::Global, ConfigurationType::PerformanceTracking, std::string("true"));
   unsafeSetIfNotExist(Level::Global, ConfigurationType::MaxLogFileSize, std::string("0"));
   unsafeSetIfNotExist(Level::Global, ConfigurationType::Format, std::string("%datetime %level [%logger] %msg"));
@@ -431,7 +431,7 @@ bool Configurations::Parser::parseFromFile(const std::string& configurationFile,
   ELPP_ASSERT(fileStream_.is_open(), "Unable to open configuration file [" << configurationFile << "] for parsing.");
   bool parsedSuccessfully = false;
   std::string line = std::string();
-  Level currLevel = Level::Unknown;
+  Level currLevel = Level::EnUnknownLevel;
   std::string currConfigStr = std::string();
   std::string currLevelStr = std::string();
   while (fileStream_.good()) {
@@ -448,7 +448,7 @@ bool Configurations::Parser::parseFromText(const std::string& configurationsStri
   bool parsedSuccessfully = false;
   std::stringstream ss(configurationsString);
   std::string line = std::string();
-  Level currLevel = Level::Unknown;
+  Level currLevel = Level::EnUnknownLevel;
   std::string currConfigStr = std::string();
   std::string currLevelStr = std::string();
   while (std::getline(ss, line)) {
@@ -496,7 +496,7 @@ bool Configurations::Parser::isConfig(const std::string& line) {
 bool Configurations::Parser::parseLine(std::string* line, std::string* currConfigStr, std::string* currLevelStr,
                                        Level* currLevel,
                                        Configurations* conf) {
-  ConfigurationType currConfig = ConfigurationType::Unknown;
+  ConfigurationType currConfig = ConfigurationType::UnknownConfig;
   std::string currValue = std::string();
   *line = base::utils::Str::trim(*line);
   if (isComment(*line)) return true;
@@ -544,9 +544,9 @@ bool Configurations::Parser::parseLine(std::string* line, std::string* currConfi
       }
     }
   }
-  ELPP_ASSERT(*currLevel != Level::Unknown, "Unrecognized severity level [" << *currLevelStr << "]");
-  ELPP_ASSERT(currConfig != ConfigurationType::Unknown, "Unrecognized configuration [" << *currConfigStr << "]");
-  if (*currLevel == Level::Unknown || currConfig == ConfigurationType::Unknown) {
+  ELPP_ASSERT(*currLevel != Level::EnUnknownLevel, "Unrecognized severity level [" << *currLevelStr << "]");
+  ELPP_ASSERT(currConfig != ConfigurationType::UnknownConfig, "Unrecognized configuration [" << *currConfigStr << "]");
+  if (*currLevel == Level::EnUnknownLevel || currConfig == ConfigurationType::UnknownConfig) {
     return false;  // unrecognizable level or config
   }
   conf->set(*currLevel, currConfig, currValue);
@@ -1454,7 +1454,7 @@ void SubsecondPrecision::init(int width) {
 // LogFormat
 
 LogFormat::LogFormat(void) :
-  m_level(Level::Unknown),
+  m_level(Level::EnUnknownLevel),
   m_userFormat(base::type::string_t()),
   m_format(base::type::string_t()),
   m_dateTimeFormat(std::string()),
@@ -1530,19 +1530,19 @@ void LogFormat::parseFromFormat(const base::type::string_t& userFormat) {
     }
   };
   conditionalAddFlag(base::consts::kAppNameFormatSpecifier, base::FormatFlags::AppName);
-  conditionalAddFlag(base::consts::kSeverityLevelFormatSpecifier, base::FormatFlags::Level);
+  conditionalAddFlag(base::consts::kSeverityLevelFormatSpecifier, base::FormatFlags::EnLevel);
   conditionalAddFlag(base::consts::kSeverityLevelShortFormatSpecifier, base::FormatFlags::LevelShort);
   conditionalAddFlag(base::consts::kLoggerIdFormatSpecifier, base::FormatFlags::LoggerId);
   conditionalAddFlag(base::consts::kThreadIdFormatSpecifier, base::FormatFlags::ThreadId);
-  conditionalAddFlag(base::consts::kLogFileFormatSpecifier, base::FormatFlags::File);
+  conditionalAddFlag(base::consts::kLogFileFormatSpecifier, base::FormatFlags::FileFlag);
   conditionalAddFlag(base::consts::kLogFileBaseFormatSpecifier, base::FormatFlags::FileBase);
   conditionalAddFlag(base::consts::kLogLineFormatSpecifier, base::FormatFlags::Line);
   conditionalAddFlag(base::consts::kLogLocationFormatSpecifier, base::FormatFlags::Location);
   conditionalAddFlag(base::consts::kLogFunctionFormatSpecifier, base::FormatFlags::Function);
   conditionalAddFlag(base::consts::kCurrentUserFormatSpecifier, base::FormatFlags::User);
   conditionalAddFlag(base::consts::kCurrentHostFormatSpecifier, base::FormatFlags::Host);
-  conditionalAddFlag(base::consts::kMessageFormatSpecifier, base::FormatFlags::LogMessage);
-  conditionalAddFlag(base::consts::kVerboseLevelFormatSpecifier, base::FormatFlags::VerboseLevel);
+  conditionalAddFlag(base::consts::kMessageFormatSpecifier, base::FormatFlags::EnLogMessage);
+  conditionalAddFlag(base::consts::kVerboseLevelFormatSpecifier, base::FormatFlags::EnVerboseLevel);
   // For date/time we need to extract user's date format first
   std::size_t dateIndex = std::string::npos;
   if ((dateIndex = formatCopy.find(base::consts::kDateTimeFormatSpecifier)) != std::string::npos) {
@@ -1550,7 +1550,7 @@ void LogFormat::parseFromFormat(const base::type::string_t& userFormat) {
       dateIndex = formatCopy.find(base::consts::kDateTimeFormatSpecifier, dateIndex + 1);
     }
     if (dateIndex != std::string::npos) {
-      addFlag(base::FormatFlags::DateTime);
+      addFlag(base::FormatFlags::EnDateTime);
       updateDateFormat(dateIndex, formatCopy);
     }
   }
@@ -1559,7 +1559,7 @@ void LogFormat::parseFromFormat(const base::type::string_t& userFormat) {
 }
 
 void LogFormat::updateDateFormat(std::size_t index, base::type::string_t& currFormat) {
-  if (hasFlag(base::FormatFlags::DateTime)) {
+  if (hasFlag(base::FormatFlags::EnDateTime)) {
     index += ELPP_STRLEN(base::consts::kDateTimeFormatSpecifier);
   }
   const base::type::char_t* ptr = currFormat.c_str() + index;
@@ -1579,7 +1579,7 @@ void LogFormat::updateDateFormat(std::size_t index, base::type::string_t& currFo
     m_dateTimeFormat = ss.str();
   } else {
     // No format provided, use default
-    if (hasFlag(base::FormatFlags::DateTime)) {
+    if (hasFlag(base::FormatFlags::EnDateTime)) {
       m_dateTimeFormat = std::string(base::consts::kDefaultDateTimeFormat);
     }
   }
@@ -1718,7 +1718,7 @@ void TypedConfigurations::build(Configurations* configurations) {
     } else if (conf->configurationType() == ConfigurationType::Format) {
       setValue(conf->level(), base::LogFormat(conf->level(),
                                               base::type::string_t(conf->value().begin(), conf->value().end())), &m_logFormatMap);
-    } else if (conf->configurationType() == ConfigurationType::SubsecondPrecision) {
+    } else if (conf->configurationType() == ConfigurationType::EnSubsecondPrecision) {
       setValue(Level::Global,
                base::SubsecondPrecision(static_cast<int>(getULong(conf->value()))), &m_subsecondPrecisionMap);
     } else if (conf->configurationType() == ConfigurationType::PerformanceTracking) {
@@ -2436,7 +2436,7 @@ base::type::string_t DefaultLogBuilder::build(const LogMessage* logMessage, bool
     base::utils::Str::replaceFirstWithEscape(logLine, base::consts::kThreadIdFormatSpecifier,
         ELPP->getThreadName(base::threading::getCurrentThreadId()));
   }
-  if (logFormat->hasFlag(base::FormatFlags::DateTime)) {
+  if (logFormat->hasFlag(base::FormatFlags::EnDateTime)) {
     // DateTime
     base::utils::Str::replaceFirstWithEscape(logLine, base::consts::kDateTimeFormatSpecifier,
         base::utils::DateTime::getDateTime(logFormat->dateTimeFormat().c_str(),
@@ -2446,7 +2446,7 @@ base::type::string_t DefaultLogBuilder::build(const LogMessage* logMessage, bool
     // Function
     base::utils::Str::replaceFirstWithEscape(logLine, base::consts::kLogFunctionFormatSpecifier, logMessage->func());
   }
-  if (logFormat->hasFlag(base::FormatFlags::File)) {
+  if (logFormat->hasFlag(base::FormatFlags::FileFlag)) {
     // File
     base::utils::Str::clearBuff(buff, base::consts::kSourceFilenameMaxLength);
     base::utils::File::buildStrippedFilename(logMessage->file().c_str(), buff);
@@ -2475,13 +2475,13 @@ base::type::string_t DefaultLogBuilder::build(const LogMessage* logMessage, bool
           false);
     base::utils::Str::replaceFirstWithEscape(logLine, base::consts::kLogLocationFormatSpecifier, std::string(buff));
   }
-  if (logMessage->level() == Level::Verbose && logFormat->hasFlag(base::FormatFlags::VerboseLevel)) {
+  if (logMessage->level() == Level::Verbose && logFormat->hasFlag(base::FormatFlags::EnVerboseLevel)) {
     // Verbose level
     char* buf = base::utils::Str::clearBuff(buff, 1);
     buf = base::utils::Str::convertAndAddToBuff(logMessage->verboseLevel(), 1, buf, bufLim, false);
     base::utils::Str::replaceFirstWithEscape(logLine, base::consts::kVerboseLevelFormatSpecifier, std::string(buff));
   }
-  if (logFormat->hasFlag(base::FormatFlags::LogMessage)) {
+  if (logFormat->hasFlag(base::FormatFlags::EnLogMessage)) {
     // Log message
     base::utils::Str::replaceFirstWithEscape(logLine, base::consts::kMessageFormatSpecifier, logMessage->message());
   }

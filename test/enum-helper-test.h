@@ -1,4 +1,4 @@
-#ifndef ENUM_HELPER_TESTS_H
+﻿#ifndef ENUM_HELPER_TESTS_H
 #define ENUM_HELPER_TESTS_H
 #include "test.h"
 
@@ -11,7 +11,7 @@ TEST(LevelTest, ConvertFromString) {
     EXPECT_EQ(Level::Fatal, LevelHelper::convertFromString("FATAL"));
     EXPECT_EQ(Level::Trace, LevelHelper::convertFromString("TRACE"));
     EXPECT_EQ(Level::Verbose, LevelHelper::convertFromString("VERBOSE"));
-    EXPECT_EQ(Level::Unknown, LevelHelper::convertFromString("QA"));
+    EXPECT_EQ(Level::EnUnknownLevel, LevelHelper::convertFromString("QA"));
 }
 
 TEST(LevelTest, ConvertToString) {
@@ -31,7 +31,7 @@ TEST(ConfigurationTypeTest, ConvertFromString) {
     EXPECT_EQ(ConfigurationType::ToStandardOutput, ConfigurationTypeHelper::convertFromString("TO_STANDARD_OUTPUT"));
     EXPECT_EQ(ConfigurationType::Format, ConfigurationTypeHelper::convertFromString("FORMAT"));
     EXPECT_EQ(ConfigurationType::Filename, ConfigurationTypeHelper::convertFromString("FILENAME"));
-    EXPECT_EQ(ConfigurationType::SubsecondPrecision, ConfigurationTypeHelper::convertFromString("SUBSECOND_PRECISION"));
+    EXPECT_EQ(ConfigurationType::EnSubsecondPrecision, ConfigurationTypeHelper::convertFromString("SUBSECOND_PRECISION"));
     EXPECT_EQ(ConfigurationType::PerformanceTracking, ConfigurationTypeHelper::convertFromString("PERFORMANCE_TRACKING"));
     EXPECT_EQ(ConfigurationType::MaxLogFileSize, ConfigurationTypeHelper::convertFromString("MAX_LOG_FILE_SIZE"));
     EXPECT_EQ(ConfigurationType::LogFlushThreshold, ConfigurationTypeHelper::convertFromString("LOG_FLUSH_THRESHOLD"));
@@ -43,7 +43,7 @@ TEST(ConfigurationTypeTest, ConvertToString) {
     EXPECT_STRCASEEQ("TO_STANDARD_OUTPUT", ConfigurationTypeHelper::convertToString(ConfigurationType::ToStandardOutput));
     EXPECT_STRCASEEQ("FORMAT", ConfigurationTypeHelper::convertToString(ConfigurationType::Format));
     EXPECT_STRCASEEQ("FILENAME", ConfigurationTypeHelper::convertToString(ConfigurationType::Filename));
-    EXPECT_STRCASEEQ("SUBSECOND_PRECISION", ConfigurationTypeHelper::convertToString(ConfigurationType::SubsecondPrecision));
+    EXPECT_STRCASEEQ("SUBSECOND_PRECISION", ConfigurationTypeHelper::convertToString(ConfigurationType::EnSubsecondPrecision));
     EXPECT_STRCASEEQ("PERFORMANCE_TRACKING", ConfigurationTypeHelper::convertToString(ConfigurationType::PerformanceTracking));
     EXPECT_STRCASEEQ("MAX_LOG_FILE_SIZE", ConfigurationTypeHelper::convertToString(ConfigurationType::MaxLogFileSize));
     EXPECT_STRCASEEQ("LOG_FLUSH_THRESHOLD", ConfigurationTypeHelper::convertToString(ConfigurationType::LogFlushThreshold));

@@ -16,6 +16,13 @@
 
 #ifndef EASYLOGGINGPP_H
 #define EASYLOGGINGPP_H
+
+#if defined(_MSC_VER)
+#if _MSC_VER <= 1700
+#pragma warning(disable : 4482)
+#endif
+#endif
+
 // Compilers and C++0x/C++11 Evaluation
 #if __cplusplus >= 201103L
 #  define ELPP_CXX11 1
@@ -569,7 +576,7 @@ class StaticClass {
 ///
 /// @detail With Easylogging++, developers may disable or enable any level regardless of
 /// what the severity is. Or they can choose to log using hierarchical logging flag
-enum class Level : base::type::EnumType {
+enum Level : base::type::EnumType {
   /// @brief Generic level that represents all the levels. Useful when setting global configuration for all levels
   Global = 1,
   /// @brief Information that can be useful to back-trace certain events - mostly useful than debug logs.
@@ -587,7 +594,7 @@ enum class Level : base::type::EnumType {
   /// @brief Mainly useful to represent current progress of application
   Info = 128,
   /// @brief Represents unknown level
-  Unknown = 1010
+  EnUnknownLevel = 1010
 };
 } // namespace el
 namespace std {
@@ -629,7 +636,7 @@ class LevelHelper : base::StaticClass {
 };
 /// @brief Represents enumeration of ConfigurationType used to configure or access certain aspect
 /// of logging
-enum class ConfigurationType : base::type::EnumType {
+enum ConfigurationType : base::type::EnumType {
   /// @brief Determines whether or not corresponding level and logger of logging is enabled
   /// You may disable all logs by using el::Level::Global
   Enabled = 1,
@@ -643,9 +650,9 @@ enum class ConfigurationType : base::type::EnumType {
   /// @brief Determines log file (full path) to write logs to for correponding level and logger
   Filename = 16,
   /// @brief Specifies precision of the subsecond part. It should be within range (1-6).
-  SubsecondPrecision = 32,
+  EnSubsecondPrecision = 32,
   /// @brief Alias of SubsecondPrecision (for backward compatibility)
-  MillisecondsWidth = SubsecondPrecision,
+  EnMillisecondsWidth = EnSubsecondPrecision,
   /// @brief Determines whether or not performance tracking is enabled.
   ///
   /// @detail This does not depend on logger or level. Performance tracking always uses 'performance' logger
@@ -658,7 +665,7 @@ enum class ConfigurationType : base::type::EnumType {
   /// @brief Specifies number of log entries to hold until we flush pending log data
   LogFlushThreshold = 256,
   /// @brief Represents unknown configuration
-  Unknown = 1010
+  UnknownConfig = 1010
 };
 /// @brief Static class that contains helper functions for el::ConfigurationType
 class ConfigurationTypeHelper : base::StaticClass {
@@ -690,7 +697,7 @@ class ConfigurationTypeHelper : base::StaticClass {
   static inline void forEachConfigType(base::type::EnumType* startIndex, const std::function<bool(void)>& fn);
 };
 /// @brief Flags used while writing logs. This flags are set by user
-enum class LoggingFlag : base::type::EnumType {
+enum LoggingFlag : base::type::EnumType {
   /// @brief Makes sure we have new line for each container log entry
   NewLineForContainer = 1,
   /// @brief Makes sure if -vmodule is used and does not specifies a module, then verbose
@@ -808,24 +815,24 @@ typedef std::function<void(const char*, std::size_t)> PreRollOutCallback;
 namespace base {
 static inline void defaultPreRollOutCallback(const char*, std::size_t) {}
 /// @brief Enum to represent timestamp unit
-enum class TimestampUnit : base::type::EnumType {
+enum TimestampUnit : base::type::EnumType {
   Microsecond = 0, Millisecond = 1, Second = 2, Minute = 3, Hour = 4, Day = 5
 };
 /// @brief Format flags used to determine specifiers that are active for performance improvements.
-enum class FormatFlags : base::type::EnumType {
-  DateTime = 1 << 1,
+enum FormatFlags : base::type::EnumType {
+  EnDateTime = 1 << 1,
   LoggerId = 1 << 2,
-  File = 1 << 3,
+  FileFlag = 1 << 3,
   Line = 1 << 4,
   Location = 1 << 5,
   Function = 1 << 6,
   User = 1 << 7,
   Host = 1 << 8,
-  LogMessage = 1 << 9,
-  VerboseLevel = 1 << 10,
+  EnLogMessage = 1 << 9,
+  EnVerboseLevel = 1 << 10,
   AppName = 1 << 11,
   ThreadId = 1 << 12,
-  Level = 1 << 13,
+  EnLevel = 1 << 13,
   FileBase = 1 << 14,
   LevelShort = 1 << 15
 };
@@ -2140,7 +2147,7 @@ class RegisteredHitCounters : public base::utils::RegistryWithPred<base::HitCoun
   }
 };
 /// @brief Action to be taken for dispatching
-enum class DispatchAction : base::type::EnumType {
+enum DispatchAction : base::type::EnumType {
   None = 1, NormalLog = 2, SysLog = 4
 };
 }  // namespace base
@@ -3201,7 +3208,7 @@ class Writer : base::NoCopy {
   }
 
   Writer(LogMessage* msg, base::DispatchAction dispatchAction = base::DispatchAction::NormalLog) :
-    m_msg(msg), m_level(msg != nullptr ? msg->level() : Level::Unknown),
+    m_msg(msg), m_level(msg != nullptr ? msg->level() : Level::EnUnknownLevel),
     m_line(0), m_logger(nullptr), m_proceed(false), m_dispatchAction(dispatchAction) {
   }
 
@@ -3412,7 +3419,7 @@ writer(level, __FILE__, __LINE__, ELPP_FUNC, dispatchAction).construct(el_getVAL
 #if defined(ELPP_FEATURE_ALL) || defined(ELPP_FEATURE_PERFORMANCE_TRACKING)
 class PerformanceTrackingData {
  public:
-  enum class DataType : base::type::EnumType {
+  enum DataType : base::type::EnumType {
     Checkpoint = 1, Complete = 2
   };
   // Do not use constructor, will run into multiple definition error, use init(PerformanceTracker*)
