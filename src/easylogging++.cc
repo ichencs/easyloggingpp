@@ -1,4 +1,4 @@
-//
+﻿//
 //  Bismillah ar-Rahmaan ar-Raheem
 //
 //  Easylogging++ v9.96.7
@@ -163,10 +163,16 @@ static struct StringToLevelItem stringToLevelMap[] = {
 };
 
 Level LevelHelper::convertFromString(const char* levelStr) {
-  for (auto& item : stringToLevelMap) {
-    if (base::utils::Str::cStringCaseEq(levelStr, item.levelString)) {
-      return item.level;
-    }
+	for (int i = 0; i < ARRAYSIZE(stringToLevelMap); i++)
+	{
+		StringToLevelItem& item = stringToLevelMap[i];
+		if (base::utils::Str::cStringCaseEq(levelStr, item.levelString)) {
+			return item.level;
+	}
+//   for (StringToLevelItem& item : stringToLevelMap) {
+//     if (base::utils::Str::cStringCaseEq(levelStr, item.levelString)) {
+//       return item.level;
+//     }
   }
   return Level::Unknown;
 }
@@ -216,10 +222,15 @@ static struct ConfigurationStringToTypeItem configStringToTypeMap[] = {
 };
 
 ConfigurationType ConfigurationTypeHelper::convertFromString(const char* configStr) {
-  for (auto& item : configStringToTypeMap) {
+	for (int i = 0; ARRAYSIZE(configStringToTypeMap);i++) {
+		ConfigurationStringToTypeItem& item = configStringToTypeMap[i];
     if (base::utils::Str::cStringCaseEq(configStr, item.configString)) {
       return item.configType;
     }
+// 	for (auto& item : configStringToTypeMap) {
+// 		if (base::utils::Str::cStringCaseEq(configStr, item.configString)) {
+// 			return item.configType;
+// 		}
   }
   return ConfigurationType::Unknown;
 }
@@ -318,9 +329,14 @@ void Configurations::setFromBase(Configurations* base) {
     return;
   }
   base::threading::ScopedLock scopedLock(base->lock());
-  for (Configuration*& conf : base->list()) {
+  for (int i = 0; i < base->list().size();i++) {
+	  Configuration*& conf = base->list()[i];
     set(conf);
   }
+//   for (Configuration*& conf : base->list()) {
+// 	  set(conf);
+//   }
+
 }
 
 bool Configurations::hasConfiguration(ConfigurationType configurationType) {
@@ -693,7 +709,7 @@ void Logger::flush(Level level, base::type::fstream_t* fs) {
   }
   if (fs != nullptr) {
     fs->flush();
-    std::unordered_map<Level, unsigned int>::iterator iter = m_unflushedCount.find(level);
+    std::map<Level, unsigned int>::iterator iter = m_unflushedCount.find(level);
     if (iter != m_unflushedCount.end()) {
       iter->second = 0;
     }
@@ -819,7 +835,13 @@ bool File::createPath(const std::string& path) {
   return true;
 }
 
-std::string File::extractPathFromFilename(const std::string& fullPath, const char* separator) {
+std::string File::extractPathFromFilename(const std::string& _fullPath, const char* separator) {
+	std::string fullPath = _fullPath;
+#if ELPP_OS_WINDOWS
+	base::utils::Str::replaceAll(fullPath, "/", separator); // Replace path element since we are dealing with filename
+#else
+	base::utils::Str::replaceAll(fullPath, "\\", separator); // Replace path element since we are dealing with filename
+#endif
   if ((fullPath == "") || (fullPath.find(separator) == std::string::npos)) {
     return fullPath;
   }
@@ -1353,7 +1375,7 @@ bool CommandLineArgs::hasParamWithValue(const char* paramKey) const {
 }
 
 const char* CommandLineArgs::getParamValue(const char* paramKey) const {
-  std::unordered_map<std::string, std::string>::const_iterator iter = m_paramsWithValue.find(std::string(paramKey));
+  std::map<std::string, std::string>::const_iterator iter = m_paramsWithValue.find(std::string(paramKey));
   return iter != m_paramsWithValue.end() ? iter->second.c_str() : "";
 }
 
@@ -1524,7 +1546,7 @@ void LogFormat::parseFromFormat(const base::type::string_t& userFormat) {
   // For date/time we need to extract user's date format first
   std::size_t dateIndex = std::string::npos;
   if ((dateIndex = formatCopy.find(base::consts::kDateTimeFormatSpecifier)) != std::string::npos) {
-    while (dateIndex > 0 && formatCopy[dateIndex - 1] == base::consts::kFormatSpecifierChar) {
+    while (dateIndex != std::string::npos && dateIndex > 0 && formatCopy[dateIndex - 1] == base::consts::kFormatSpecifierChar) {
       dateIndex = formatCopy.find(base::consts::kDateTimeFormatSpecifier, dateIndex + 1);
     }
     if (dateIndex != std::string::npos) {
@@ -1900,13 +1922,21 @@ Logger* RegisteredLoggers::get(const std::string& id, bool forceCreation) {
     logger_->m_logBuilder = m_defaultLogBuilder;
     registerNew(id, logger_);
     LoggerRegistrationCallback* callback = nullptr;
-    for (const std::pair<std::string, base::type::LoggerRegistrationCallbackPtr>& h
-         : m_loggerRegistrationCallbacks) {
+	for (std::map<std::string, base::type::LoggerRegistrationCallbackPtr>::iterator itor = m_loggerRegistrationCallbacks.begin();
+		itor != m_loggerRegistrationCallbacks.end(); itor++) {
+		const std::pair<std::string, base::type::LoggerRegistrationCallbackPtr>& h = *itor;
       callback = h.second.get();
       if (callback != nullptr && callback->enabled()) {
         callback->handle(logger_);
       }
     }
+// 	for (const std::pair<std::string, base::type::LoggerRegistrationCallbackPtr>& h
+// 		: m_loggerRegistrationCallbacks) {
+// 		callback = h.second.get();
+// 		if (callback != nullptr && callback->enabled()) {
+// 			callback->handle(logger_);
+// 		}
+// 	}
   }
   return logger_;
 }
@@ -2026,7 +2056,7 @@ bool VRegistry::allowed(base::type::VerboseLevel vlevel, const char* file) {
   } else {
     char baseFilename[base::consts::kSourceFilenameMaxLength] = "";
     base::utils::File::buildBaseFilename(file, baseFilename);
-    std::unordered_map<std::string, base::type::VerboseLevel>::iterator it = m_modules.begin();
+    std::map<std::string, base::type::VerboseLevel>::iterator it = m_modules.begin();
     for (; it != m_modules.end(); ++it) {
       if (base::utils::Str::wildCardMatch(baseFilename, it->first.c_str())) {
         return vlevel <= it->second;
@@ -2490,8 +2520,9 @@ void LogDispatcher::dispatch(void) {
   }
   LogDispatchCallback* callback = nullptr;
   LogDispatchData data;
-  for (const std::pair<std::string, base::type::LogDispatchCallbackPtr>& h
-       : ELPP->m_logDispatchCallbacks) {
+  for (std::map<std::string, base::type::LogDispatchCallbackPtr>::iterator itor = ELPP->m_logDispatchCallbacks.begin(); 
+	  itor != ELPP->m_logDispatchCallbacks.end();itor++) {
+	  const std::pair<std::string, base::type::LogDispatchCallbackPtr>& h = *itor;
     callback = h.second.get();
     if (callback != nullptr && callback->enabled()) {
       data.setLogMessage(m_logMessage);
@@ -2499,6 +2530,15 @@ void LogDispatcher::dispatch(void) {
       callback->handle(&data);
     }
   }
+//   for (const std::pair<std::string, base::type::LogDispatchCallbackPtr>& h
+// 	  : ELPP->m_logDispatchCallbacks) {
+// 	  callback = h.second.get();
+// 	  if (callback != nullptr && callback->enabled()) {
+// 		  data.setLogMessage(m_logMessage);
+// 		  data.setDispatchAction(m_dispatchAction);
+// 		  callback->handle(&data);
+// 	  }
+//   }
 }
 
 // MessageBuilder
@@ -2697,13 +2737,21 @@ PerformanceTracker::~PerformanceTracker(void) {
       data.init(this);
       data.m_formattedTimeTaken = formattedTime;
       PerformanceTrackingCallback* callback = nullptr;
-      for (const std::pair<std::string, base::type::PerformanceTrackingCallbackPtr>& h
-           : ELPP->m_performanceTrackingCallbacks) {
+	  for (std::map<std::string, base::type::PerformanceTrackingCallbackPtr>::iterator itor = ELPP->m_performanceTrackingCallbacks.begin();
+		  itor != ELPP->m_performanceTrackingCallbacks.end();itor++) {
+		  const std::pair<std::string, base::type::PerformanceTrackingCallbackPtr>& h = *itor;
         callback = h.second.get();
         if (callback != nullptr && callback->enabled()) {
           callback->handle(&data);
         }
       }
+// 	  for (const std::pair<std::string, base::type::PerformanceTrackingCallbackPtr>& h
+// 		  : ELPP->m_performanceTrackingCallbacks) {
+// 		  callback = h.second.get();
+// 		  if (callback != nullptr && callback->enabled()) {
+// 			  callback->handle(&data);
+// 		  }
+// 	  }
     }
   }
 #endif  // !defined(ELPP_DISABLE_PERFORMANCE_TRACKING)
@@ -2724,13 +2772,21 @@ void PerformanceTracker::checkpoint(const std::string& id, const char* file, bas
     data.m_func = func;
     data.m_formattedTimeTaken = formattedTime;
     PerformanceTrackingCallback* callback = nullptr;
-    for (const std::pair<std::string, base::type::PerformanceTrackingCallbackPtr>& h
-         : ELPP->m_performanceTrackingCallbacks) {
+	for (std::map<std::string, base::type::PerformanceTrackingCallbackPtr>::iterator itor = ELPP->m_performanceTrackingCallbacks.begin();
+		itor != ELPP->m_performanceTrackingCallbacks.end();itor++) {
+		const std::pair<std::string, base::type::PerformanceTrackingCallbackPtr>& h = *itor;
       callback = h.second.get();
       if (callback != nullptr && callback->enabled()) {
         callback->handle(&data);
       }
     }
+// 	for (const std::pair<std::string, base::type::PerformanceTrackingCallbackPtr>& h
+// 		: ELPP->m_performanceTrackingCallbacks) {
+// 		callback = h.second.get();
+// 		if (callback != nullptr && callback->enabled()) {
+// 			callback->handle(&data);
+// 		}
+// 	}
     base::utils::DateTime::gettimeofday(&m_lastCheckpointTime);
     m_hasChecked = true;
     m_lastCheckpointId = id;

@@ -1,4 +1,4 @@
-//
+﻿//
 //  Bismillah ar-Rahmaan ar-Raheem
 //
 //  Easylogging++ v9.96.7
@@ -591,12 +591,12 @@ enum class Level : base::type::EnumType {
 };
 } // namespace el
 namespace std {
-template<> struct hash<el::Level> {
- public:
-  std::size_t operator()(const el::Level& l) const {
-    return hash<el::base::type::EnumType> {}(static_cast<el::base::type::EnumType>(l));
-  }
-};
+//template<> struct hash<el::LogLevel> {
+// public:
+//  std::size_t operator()(const el::LogLevel& l) const {
+//    return hash<el::base::type::EnumType> {}(static_cast<el::base::type::EnumType>(l));
+//  }
+//};
 }
 namespace el {
 /// @brief Static class that contains helper functions for el::Level
@@ -1241,7 +1241,7 @@ class CommandLineArgs {
  private:
   int m_argc;
   char** m_argv;
-  std::unordered_map<std::string, std::string> m_paramsWithValue;
+  std::map<std::string, std::string> m_paramsWithValue;
   std::vector<std::string> m_params;
 };
 /// @brief Abstract registry (aka repository) that provides basic interface for pointer repository specified by T_Ptr type.
@@ -1365,8 +1365,8 @@ class AbstractRegistry : public base::threading::ThreadSafe {
 /// @detail NOTE: This is thread-unsafe implementation (although it contains lock function, it does not use these functions)
 ///         of AbstractRegistry<T_Ptr, Container>. Any implementation of this class should be
 ///         explicitly (by using lock functions)
-template <typename T_Ptr, typename T_Key = const char*>
-class Registry : public AbstractRegistry<T_Ptr, std::unordered_map<T_Key, T_Ptr*>> {
+template <typename T_Ptr, typename T_Key = std::string>
+class Registry : public AbstractRegistry<T_Ptr, std::map<T_Key, T_Ptr*>> {
  public:
   typedef typename Registry<T_Ptr, T_Key>::iterator iterator;
   typedef typename Registry<T_Ptr, T_Key>::const_iterator const_iterator;
@@ -1399,9 +1399,12 @@ class Registry : public AbstractRegistry<T_Ptr, std::unordered_map<T_Key, T_Ptr*
  protected:
   virtual void unregisterAll(void) ELPP_FINAL {
     if (!this->empty()) {
-      for (auto&& curr : this->list()) {
-        base::utils::safeDelete(curr.second);
-      }
+		for (iterator itor = this->list().begin(); itor != this->list().end(); itor++) {
+			base::utils::safeDelete(itor->second);
+		}
+//       for (auto&& curr : this->list()) {
+//         base::utils::safeDelete(curr.second);
+//       }
       this->list().clear();
     }
   }
@@ -1430,7 +1433,7 @@ class Registry : public AbstractRegistry<T_Ptr, std::unordered_map<T_Key, T_Ptr*
   }
 
  private:
-  virtual void deepCopy(const AbstractRegistry<T_Ptr, std::unordered_map<T_Key, T_Ptr*>>& sr) ELPP_FINAL {
+  virtual void deepCopy(const AbstractRegistry<T_Ptr, std::map<T_Key, T_Ptr*>>& sr) ELPP_FINAL {
     for (const_iterator it = sr.cbegin(); it != sr.cend(); ++it) {
       registerNew(it->first, new T_Ptr(*it->second));
     }
@@ -1482,10 +1485,13 @@ class RegistryWithPred : public AbstractRegistry<T_Ptr, std::vector<T_Ptr*>> {
 
  protected:
   virtual void unregisterAll(void) ELPP_FINAL {
-    if (!this->empty()) {
-      for (auto&& curr : this->list()) {
-        base::utils::safeDelete(curr);
+    if (!this->empty())	{
+		for (iterator itor = this->list().begin(); itor != this->list().end();itor++) {
+        base::utils::safeDelete(*itor);
       }
+// 	  for (auto&& curr : this->list()) {
+// 		  base::utils::safeDelete(curr);
+// 	  }
       this->list().clear();
     }
   }
@@ -1530,7 +1536,7 @@ class RegistryWithPred : public AbstractRegistry<T_Ptr, std::vector<T_Ptr*>> {
 class Utils {
  public:
   template <typename T, typename TPtr>
-  static bool installCallback(const std::string& id, std::unordered_map<std::string, TPtr>* mapT) {
+  static bool installCallback(const std::string& id, std::map<std::string, TPtr>* mapT) {
     if (mapT->find(id) == mapT->end()) {
       mapT->insert(std::make_pair(id, TPtr(new T())));
       return true;
@@ -1539,15 +1545,15 @@ class Utils {
   }
 
   template <typename T, typename TPtr>
-  static void uninstallCallback(const std::string& id, std::unordered_map<std::string, TPtr>* mapT) {
+  static void uninstallCallback(const std::string& id, std::map<std::string, TPtr>* mapT) {
     if (mapT->find(id) != mapT->end()) {
       mapT->erase(id);
     }
   }
 
   template <typename T, typename TPtr>
-  static T* callback(const std::string& id, std::unordered_map<std::string, TPtr>* mapT) {
-    typename std::unordered_map<std::string, TPtr>::iterator iter = mapT->find(id);
+  static T* callback(const std::string& id, std::map<std::string, TPtr>* mapT) {
+    typename std::map<std::string, TPtr>::iterator iter = mapT->find(id);
     if (iter != mapT->end()) {
       return static_cast<T*>(iter->second.get());
     }
@@ -1892,7 +1898,7 @@ class Configurations : public base::utils::RegistryWithPred<Configuration, Confi
 
 namespace base {
 typedef std::shared_ptr<base::type::fstream_t> FileStreamPtr;
-typedef std::unordered_map<std::string, FileStreamPtr> LogStreamsReferenceMap;
+typedef std::map<std::string, FileStreamPtr> LogStreamsReferenceMap;
 /// @brief Configurations with data types.
 ///
 /// @detail el::Configurations have string based values. This is whats used internally in order to read correct configurations.
@@ -1929,16 +1935,16 @@ class TypedConfigurations : public base::threading::ThreadSafe {
 
  private:
   Configurations* m_configurations;
-  std::unordered_map<Level, bool> m_enabledMap;
-  std::unordered_map<Level, bool> m_toFileMap;
-  std::unordered_map<Level, std::string> m_filenameMap;
-  std::unordered_map<Level, bool> m_toStandardOutputMap;
-  std::unordered_map<Level, base::LogFormat> m_logFormatMap;
-  std::unordered_map<Level, base::SubsecondPrecision> m_subsecondPrecisionMap;
-  std::unordered_map<Level, bool> m_performanceTrackingMap;
-  std::unordered_map<Level, base::FileStreamPtr> m_fileStreamMap;
-  std::unordered_map<Level, std::size_t> m_maxLogFileSizeMap;
-  std::unordered_map<Level, std::size_t> m_logFlushThresholdMap;
+  std::map<Level, bool> m_enabledMap;
+  std::map<Level, bool> m_toFileMap;
+  std::map<Level, std::string> m_filenameMap;
+  std::map<Level, bool> m_toStandardOutputMap;
+  std::map<Level, base::LogFormat> m_logFormatMap;
+  std::map<Level, base::SubsecondPrecision> m_subsecondPrecisionMap;
+  std::map<Level, bool> m_performanceTrackingMap;
+  std::map<Level, base::FileStreamPtr> m_fileStreamMap;
+  std::map<Level, std::size_t> m_maxLogFileSizeMap;
+  std::map<Level, std::size_t> m_logFlushThresholdMap;
   base::LogStreamsReferenceMap* m_logStreamsReference;
 
   friend class el::Helpers;
@@ -1948,21 +1954,21 @@ class TypedConfigurations : public base::threading::ThreadSafe {
   friend class el::base::LogDispatcher;
 
   template <typename Conf_T>
-  inline Conf_T getConfigByVal(Level level, const std::unordered_map<Level, Conf_T>* confMap, const char* confName) {
+  inline Conf_T getConfigByVal(Level level, const std::map<Level, Conf_T>* confMap, const char* confName) {
     base::threading::ScopedLock scopedLock(lock());
     return unsafeGetConfigByVal(level, confMap, confName);  // This is not unsafe anymore - mutex locked in scope
   }
 
   template <typename Conf_T>
-  inline Conf_T& getConfigByRef(Level level, std::unordered_map<Level, Conf_T>* confMap, const char* confName) {
+  inline Conf_T& getConfigByRef(Level level, std::map<Level, Conf_T>* confMap, const char* confName) {
     base::threading::ScopedLock scopedLock(lock());
     return unsafeGetConfigByRef(level, confMap, confName);  // This is not unsafe anymore - mutex locked in scope
   }
 
   template <typename Conf_T>
-  Conf_T unsafeGetConfigByVal(Level level, const std::unordered_map<Level, Conf_T>* confMap, const char* confName) {
+  Conf_T unsafeGetConfigByVal(Level level, const std::map<Level, Conf_T>* confMap, const char* confName) {
     ELPP_UNUSED(confName);
-    typename std::unordered_map<Level, Conf_T>::const_iterator it = confMap->find(level);
+    typename std::map<Level, Conf_T>::const_iterator it = confMap->find(level);
     if (it == confMap->end()) {
       try {
         return confMap->at(Level::Global);
@@ -1977,9 +1983,9 @@ class TypedConfigurations : public base::threading::ThreadSafe {
   }
 
   template <typename Conf_T>
-  Conf_T& unsafeGetConfigByRef(Level level, std::unordered_map<Level, Conf_T>* confMap, const char* confName) {
+  Conf_T& unsafeGetConfigByRef(Level level, std::map<Level, Conf_T>* confMap, const char* confName) {
     ELPP_UNUSED(confName);
-    typename std::unordered_map<Level, Conf_T>::iterator it = confMap->find(level);
+    typename std::map<Level, Conf_T>::iterator it = confMap->find(level);
     if (it == confMap->end()) {
       try {
         return confMap->at(Level::Global);
@@ -1993,7 +1999,7 @@ class TypedConfigurations : public base::threading::ThreadSafe {
   }
 
   template <typename Conf_T>
-  void setValue(Level level, const Conf_T& value, std::unordered_map<Level, Conf_T>* confMap,
+  void setValue(Level level, const Conf_T& value, std::map<Level, Conf_T>* confMap,
                 bool includeGlobalLevel = true) {
     // If map is empty and we are allowed to add into generic level (Level::Global), do it!
     if (confMap->empty() && includeGlobalLevel) {
@@ -2001,7 +2007,7 @@ class TypedConfigurations : public base::threading::ThreadSafe {
       return;
     }
     // If same value exist in generic level already, dont add it to explicit level
-    typename std::unordered_map<Level, Conf_T>::iterator it = confMap->find(Level::Global);
+    typename std::map<Level, Conf_T>::iterator it = confMap->find(Level::Global);
     if (it != confMap->end() && it->second == value) {
       return;
     }
@@ -2181,7 +2187,7 @@ class LogDispatchCallback : public Callback<LogDispatchData> {
   base::threading::Mutex& fileHandle(const LogDispatchData* data);
  private:
   friend class base::LogDispatcher;
-  std::unordered_map<std::string, std::unique_ptr<base::threading::Mutex>> m_fileLocks;
+  std::map<std::string, std::unique_ptr<base::threading::Mutex>> m_fileLocks;
   base::threading::Mutex m_fileLocksMapLock;
 };
 class PerformanceTrackingCallback : public Callback<PerformanceTrackingData> {
@@ -2300,7 +2306,7 @@ inline void FUNCTION_NAME(const T&);
   std::string m_parentApplicationName;
   bool m_isConfigured;
   Configurations m_configurations;
-  std::unordered_map<Level, unsigned int> m_unflushedCount;
+  std::map<Level, unsigned int> m_unflushedCount;
   base::LogStreamsReferenceMap* m_logStreamsReference;
   LogBuilderPtr m_logBuilder;
 
@@ -2406,7 +2412,7 @@ class RegisteredLoggers : public base::utils::Registry<Logger, std::string> {
   LogBuilderPtr m_defaultLogBuilder;
   Configurations m_defaultConfigurations;
   base::LogStreamsReferenceMap m_logStreamsReference;
-  std::unordered_map<std::string, base::type::LoggerRegistrationCallbackPtr> m_loggerRegistrationCallbacks;
+  std::map<std::string, base::type::LoggerRegistrationCallbackPtr> m_loggerRegistrationCallbacks;
   friend class el::base::Storage;
 
   void unsafeFlushAll(void);
@@ -2432,7 +2438,7 @@ class VRegistry : base::NoCopy, public base::threading::ThreadSafe {
 
   bool allowed(base::type::VerboseLevel vlevel, const char* file);
 
-  inline const std::unordered_map<std::string, base::type::VerboseLevel>& modules(void) const {
+  inline const std::map<std::string, base::type::VerboseLevel>& modules(void) const {
     return m_modules;
   }
 
@@ -2446,7 +2452,7 @@ class VRegistry : base::NoCopy, public base::threading::ThreadSafe {
  private:
   base::type::VerboseLevel m_level;
   base::type::EnumType* m_pFlags;
-  std::unordered_map<std::string, base::type::VerboseLevel> m_modules;
+  std::map<std::string, base::type::VerboseLevel> m_modules;
 };
 }  // namespace base
 class LogMessage {
@@ -2680,7 +2686,7 @@ class Storage : base::NoCopy, public base::threading::ThreadSafe {
 
   inline std::string getThreadName(const std::string& threadId) {
     base::threading::ScopedLock scopedLock(m_threadNamesLock);
-    std::unordered_map<std::string, std::string>::const_iterator it = m_threadNames.find(threadId);
+    std::map<std::string, std::string>::const_iterator it = m_threadNames.find(threadId);
     if (it == m_threadNames.end()) {
       return threadId;
     }
@@ -2697,9 +2703,9 @@ class Storage : base::NoCopy, public base::threading::ThreadSafe {
 #endif  // ELPP_ASYNC_LOGGING
   base::utils::CommandLineArgs m_commandLineArgs;
   PreRollOutCallback m_preRollOutCallback;
-  std::unordered_map<std::string, base::type::LogDispatchCallbackPtr> m_logDispatchCallbacks;
-  std::unordered_map<std::string, base::type::PerformanceTrackingCallbackPtr> m_performanceTrackingCallbacks;
-  std::unordered_map<std::string, std::string> m_threadNames;
+  std::map<std::string, base::type::LogDispatchCallbackPtr> m_logDispatchCallbacks;
+  std::map<std::string, base::type::PerformanceTrackingCallbackPtr> m_performanceTrackingCallbacks;
+  std::map<std::string, std::string> m_threadNames;
   std::vector<CustomFormatSpecifier> m_customFormatSpecifiers;
   base::threading::Mutex m_customFormatSpecifiersLock;
   base::threading::Mutex m_threadNamesLock;
@@ -2972,7 +2978,7 @@ return writeIterator(template_inst.begin(), template_inst.end(), template_inst.s
   }
 #  endif  // defined(ELPP_LOG_STD_ARRAY)
 #  if defined(ELPP_LOG_UNORDERED_MAP)
-  ELPP_ITERATOR_CONTAINER_LOG_FIVE_ARG(std::unordered_map)
+  ELPP_ITERATOR_CONTAINER_LOG_FIVE_ARG(std::map)
   ELPP_ITERATOR_CONTAINER_LOG_FIVE_ARG(std::unordered_multimap)
 #  endif  // defined(ELPP_LOG_UNORDERED_MAP)
 #  if defined(ELPP_LOG_UNORDERED_SET)

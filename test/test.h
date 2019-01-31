@@ -1,4 +1,4 @@
-//
+﻿//
 // This header is used across tests to include all the valid headers
 //
 
@@ -31,7 +31,7 @@ static void reconfigureLoggersForTest(void) {
     c.setGlobally(ConfigurationType::LogFlushThreshold, "1");
     Loggers::setDefaultConfigurations(c, true);
     // We do not want to reconfgure syslog with date/time
-    Loggers::reconfigureLogger(consts::kSysLogLoggerId, ConfigurationType::Format, "%level: %msg");
+    //Loggers::reconfigureLogger(consts::kSysLogLoggerId, ConfigurationType::Format, "%level: %msg");
 
     Loggers::addFlag(LoggingFlag::DisableApplicationAbortOnFatalLog);
     Loggers::addFlag(LoggingFlag::ImmediateFlush);

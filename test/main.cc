@@ -1,4 +1,4 @@
-// gtest based unit tests
+﻿// gtest based unit tests
 
 #include "test.h"
 
@@ -24,7 +24,7 @@
 #include "registry-test.h"
 #include "strict-file-size-check-test.h"
 #include "string-utils-test.h"
-#include "syslog-test.h"
+// #include "syslog-test.h"
 #include "typed-configurations-test.h"
 #include "utilities-test.h"
 #include "verbose-app-arguments-test.h"
