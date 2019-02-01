@@ -94,7 +94,7 @@ static const char* kDefaultLogFile                         =      "nul";
 #elif defined(ELPP_DEFAULT_LOG_FILE)
 static const char* kDefaultLogFile                         =      ELPP_DEFAULT_LOG_FILE;
 #else
-static const char* kDefaultLogFile                         =      "myeasylog.log";
+static const char* kDefaultLogFile                         =      "..\\logs\\myeasylog.log";
 #endif // defined(ELPP_NO_DEFAULT_LOG_FILE)
 
 
@@ -222,7 +222,7 @@ static struct ConfigurationStringToTypeItem configStringToTypeMap[] = {
 };
 
 ConfigurationType ConfigurationTypeHelper::convertFromString(const char* configStr) {
-	for (int i = 0; ARRAYSIZE(configStringToTypeMap);i++) {
+	for (int i = 0; i < ARRAYSIZE(configStringToTypeMap);i++) {
 		ConfigurationStringToTypeItem& item = configStringToTypeMap[i];
     if (base::utils::Str::cStringCaseEq(configStr, item.configString)) {
       return item.configType;
@@ -1038,17 +1038,17 @@ char* Str::clearBuff(char buff[], std::size_t lim) {
 /// @brief Converst wchar* to char*
 ///        NOTE: Need to free return value after use!
 char* Str::wcharPtrToCharPtr(const wchar_t* line) {
-  std::size_t len_ = wcslen(line) + 1;
-  char* buff_ = static_cast<char*>(malloc(len_ + 1));
-#      if ELPP_OS_UNIX || (ELPP_OS_WINDOWS && !ELPP_CRT_DBG_WARNINGS)
-  std::wcstombs(buff_, line, len_);
-#      elif ELPP_OS_WINDOWS
-  std::size_t convCount_ = 0;
-  mbstate_t mbState_;
-  ::memset(static_cast<void*>(&mbState_), 0, sizeof(mbState_));
-  wcsrtombs_s(&convCount_, buff_, len_, &line, len_, &mbState_);
-#      endif  // ELPP_OS_UNIX || (ELPP_OS_WINDOWS && !ELPP_CRT_DBG_WARNINGS)
-  return buff_;
+#if ELPP_OS_UNIX || (ELPP_OS_WINDOWS && !ELPP_CRT_DBG_WARNINGS)
+	std::size_t len_ = (wcslen(line) + 1);
+	char* buff_ = static_cast<char*>(malloc(len_));
+	std::wcstombs(buff_, line, len_);
+#elif ELPP_OS_WINDOWS
+	int len_ = WideCharToMultiByte(CP_THREAD_ACP, 0, line, -1, nullptr, 0, 0, 0);
+	char* buff_ = static_cast<char*>(malloc(len_));
+ 	memset(buff_, 0, (len_) * sizeof(char));
+	WideCharToMultiByte(CP_THREAD_ACP, 0, line, -1, buff_, len_, 0, 0);
+#endif  // ELPP_OS_UNIX || (ELPP_OS_WINDOWS && !ELPP_CRT_DBG_WARNINGS)
+	return buff_;
 }
 
 // OS
