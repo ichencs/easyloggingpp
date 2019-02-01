@@ -295,11 +295,12 @@ Configurations::Configurations(void) :
 Configurations::Configurations(const std::string& configurationFile, bool useDefaultsForRemaining,
                                Configurations* base) :
   m_configurationFile(configurationFile),
-  m_isFromFile(false) {
-  parseFromFile(configurationFile, base);
-  if (useDefaultsForRemaining) {
-    setRemainingToDefault();
-  }
+  m_isFromFile(false)
+{
+	if (useDefaultsForRemaining) {
+		setRemainingToDefault();
+	}
+	parseFromFile(configurationFile, base);
 }
 
 bool Configurations::parseFromFile(const std::string& configurationFile, Configurations* base) {
